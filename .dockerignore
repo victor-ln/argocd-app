@@ -2,6 +2,9 @@
 .venv/
 venv/
 ENV/
+# A versão da imagem vem do --build-arg APP_VERSION, não de um .env assado.
+.env
+.env.*
 
 # Ignorar caches do Python e ferramentas
 **/__pycache__/
