@@ -1,0 +1,9 @@
+name: argo-app
+
+services:
+  app:
+    container_name: argo-app
+    build:
+      context: .
+    ports:
+      - 8000:8000
