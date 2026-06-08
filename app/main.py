@@ -5,8 +5,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from app.config.settings import settings
-
-app = FastAPI()
+from app.routers import items
 
 logging.basicConfig(
     stream=sys.stdout,
@@ -23,7 +22,6 @@ app = FastAPI(
     version=settings.app_version,
 )
 
-
 app.add_middleware(
     CORSMiddleware,
     allow_origins=settings.app_cors_origins,
@@ -32,11 +30,23 @@ app.add_middleware(
     allow_headers=settings.app_allow_headers,
 )
 
-@app.get("/health")
+app.include_router(items.router)
+
+
+@app.get("/version", tags=["meta"])
+async def version():
+    """Expõe a versão do build — vinda da tag via --build-arg APP_VERSION.
+
+    É a rota que prova o ciclo de CD: a cada release, a imagem nova reporta a
+    versão nova aqui.
+    """
+    return {"version": settings.app_version}
+
+
+@app.get("/health", tags=["meta"])
 async def health():
     """Liveness probe — responde 200 enquanto o processo está de pé.
 
-    NÃO depende de Mongo/Temporal: um blip no Mongo não deve matar o pod
-    (isso é papel do readiness). Usado pelo livenessProbe do K8s.
+    NÃO depende de dependências externas: usado pelo livenessProbe do K8s.
     """
     return {"status": "ok", "version": settings.app_version}
