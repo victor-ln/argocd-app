@@ -1,0 +1,13 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  release:
+    uses: victor-ln/ci-templates/.github/workflows/release.yml@v1
+    with:
+      release_branches: '["main"]'
+    secrets:
+      SEMANTIC_RELEASE_TOKEN: ${{ secrets.SEMANTIC_RELEASE_TOKEN }}

@@ -1,0 +1,28 @@
+name: Promote Prod
+
+on:
+  push:
+    tags: ["v*"]
+
+jobs:
+  promote:
+    uses: victor-ln/ci-templates/.github/workflows/promote.yml@v1
+    with:
+      registry: docker.io
+      project: vlimanu
+      app: argocd-app
+    secrets:
+      HARBOR_USERNAME: ${{ secrets.REGISTRY_USER }}
+      HARBOR_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+
+  bump:
+    needs: promote
+    uses: victor-ln/ci-templates/.github/workflows/gitops-bump.yml@v1
+    with:
+      project: poc
+      app: argo-app
+      env: prod
+      new_tag: ${{ needs.promote.outputs.version }}
+      gitops_repo: victor-ln/gitops-manifests
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.MANIFEST_REPO_TOKEN }}

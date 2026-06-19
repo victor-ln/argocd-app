@@ -1,0 +1,40 @@
+name: Deploy Dev
+
+on:
+  push:
+    branches: [release]
+
+jobs:
+  vars:
+    runs-on: ubuntu-latest
+    outputs:
+      sha7: ${{ steps.sha.outputs.sha7 }}
+    steps:
+      - id: sha
+        run: echo "sha7=${GITHUB_SHA:0:7}" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: vars
+    uses: victor-ln/ci-templates/.github/workflows/build-push.yml@v1
+    with:
+      registry: docker.io
+      project: vlimanu
+      app: argocd-app
+      tags: |
+        type=raw,value=sha-${{ needs.vars.outputs.sha7 }}
+      version: 0.0.0-dev.${{ github.run_number }}
+    secrets:
+      HARBOR_USERNAME: ${{ secrets.REGISTRY_USER }}
+      HARBOR_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
+
+  bump:
+    needs: [vars, build]
+    uses: victor-ln/ci-templates/.github/workflows/gitops-bump.yml@v1
+    with:
+      project: poc
+      app: argo-app
+      env: dev
+      new_tag: sha-${{ needs.vars.outputs.sha7 }}
+      gitops_repo: victor-ln/gitops-manifests
+    secrets:
+      GITOPS_TOKEN: ${{ secrets.MANIFEST_REPO_TOKEN }}

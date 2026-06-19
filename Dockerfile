@@ -7,7 +7,8 @@ COPY pyproject.toml uv.lock ./
 RUN uv sync --frozen --no-cache
 COPY . .
 
-ARG APP_VERSION=dev
+ARG VERSION=dev
+ARG APP_VERSION=${VERSION}
 ENV APP_VERSION=${APP_VERSION}
 EXPOSE 8000
 

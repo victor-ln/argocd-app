@@ -49,19 +49,20 @@ curl localhost:8000/version                          # {"version":"1.2.3"}
 **sobrepõe** o `.env`, e o `.env` **não** entra na imagem (está no `.dockerignore`) — então
 a versão da imagem vem 100% do build-arg (default `dev` se omitido).
 
-## Pipeline de release & CD (`.github/workflows/deploy.yml`)
+## Pipeline de release & CD
 
-Um único workflow disparado por **push na `main`**, com 3 jobs encadeados por `needs`:
+Os workflows deste repo são callers finos para
+`victor-ln/ci-templates/.github/workflows/*@v1`, simulando o desenho produtivo:
 
-1. **release** — [semantic-release](https://semantic-release.gitbook.io/) lê os commits
-   convencionais e, se houver release, cria a tag `vX.Y.Z` + GitHub Release. Usa o
-   `GITHUB_TOKEN` padrão (não precisa de PAT, pois o build é o próximo *job* no mesmo run,
-   não um workflow separado). Regras de bump em `.releaserc.json`.
-2. **build** — builda e dá push de `vlimanu/argocd-app:X.Y.Z` (+ `:latest`) no Docker Hub,
-   injetando `APP_VERSION=X.Y.Z`.
-3. **bump** — `kustomize edit set image` no overlay `argocd-app/` do repo
-   `gitops-manifests`, commitando a nova tag. O **ArgoCD** observa esse repo e sincroniza
-   o cluster.
+1. **push na `release`** — `deploy-dev.yml` builda `vlimanu/argocd-app:sha-<7>` e faz bump de
+   `projects/poc/argo-app/overlays/dev`.
+2. **push na `main`** — `release.yml` chama o semantic-release padronizado do repo de CI e cria `vX.Y.Z`.
+3. **push da tag `v*`** — `promote-prod.yml` promove/builda
+   `vlimanu/argocd-app:vX.Y.Z` + `latest` e faz bump de
+   `projects/poc/argo-app/overlays/prod`.
+
+O CI nunca usa kubeconfig. Ele publica imagem e altera o repo `gitops-manifests`; o
+ArgoCD, rodando no cluster `poc-prod`, reconcilia tanto `poc-prod` quanto `poc-dev`.
 
 ### Bump por tipo de commit (convencional)
 
@@ -75,9 +76,8 @@ Um único workflow disparado por **push na `main`**, com 3 jobs encadeados por `
 ### Secrets/vars necessários (no GitHub deste repo)
 
 - **Secrets:** `REGISTRY_USER` (= `vlimanu`), `REGISTRY_PASSWORD` (access token do Docker
-  Hub), `MANIFEST_REPO_TOKEN` (PAT com push no `gitops-manifests`).
-- **Vars:** `GITOPS_MANIFEST_REPO` (= `victor-ln/gitops-manifests`),
-  `GITOPS_MANIFEST_BRANCH` (= `main`), `GITOPS_BUMP_ENABLED` (= `true`).
+  Hub), `MANIFEST_REPO_TOKEN` (PAT com push no `gitops-manifests`) e
+  `SEMANTIC_RELEASE_TOKEN` (PAT para criar tag/release e disparar o workflow de tag).
 
 O passo a passo completo do GitOps (instalar ArgoCD, Connect Repo, criar Applications,
 rollback) está em
