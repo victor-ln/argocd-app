@@ -16,7 +16,7 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-app = FastAP(
+app = FastAPI(
     title="argocd-app",
     description="API de demonstração (CRUD in-memory) do lab de GitOps com ArgoCD",
     version=settings.app_version,
