@@ -22,7 +22,7 @@ jobs:
       app: argocd-app
       tags: |
         type=raw,value=sha-${{ needs.vars.outputs.sha7 }}
-      version: 0.0.0-dev.${{ github.run_number }}
+      version: sha-${{ needs.vars.outputs.sha7 }}
     secrets:
       HARBOR_USERNAME: ${{ secrets.REGISTRY_USER }}
       HARBOR_PASSWORD: ${{ secrets.REGISTRY_PASSWORD }}
